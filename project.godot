@@ -8,9 +8,26 @@
 
 config_version=4
 
+_global_script_classes=[ {
+"base": "MeshInstance",
+"class": "Chunk",
+"language": "GDScript",
+"path": "res://src/World/Chunk.gd"
+}, {
+"base": "Reference",
+"class": "MeshTool",
+"language": "GDScript",
+"path": "res://src/World/MeshTool.gd"
+} ]
+_global_script_class_icons={
+"Chunk": "",
+"MeshTool": ""
+}
+
 [application]
 
 config/name="Dual Contouring Building Game"
+run/main_scene="res://Spatial.tscn"
 config/icon="res://icon.png"
 
 [physics]
