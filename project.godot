@@ -18,10 +18,16 @@ _global_script_classes=[ {
 "class": "MeshTool",
 "language": "GDScript",
 "path": "res://src/World/MeshTool.gd"
+}, {
+"base": "Reference",
+"class": "WorldGenerator",
+"language": "GDScript",
+"path": "res://src/World/Generator/WorldGenerator.gd"
 } ]
 _global_script_class_icons={
 "Chunk": "",
-"MeshTool": ""
+"MeshTool": "",
+"WorldGenerator": ""
 }
 
 [application]

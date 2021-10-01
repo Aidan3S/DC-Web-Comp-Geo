@@ -1,8 +1,21 @@
 extends MeshInstance
 class_name Chunk
 
+const CHUNK_SIZE = 32
+
+export var block_x: int
+export var block_y: int
+export var block_z: int
+
+var root
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	# Generate samples in a grid
+	var generator = WorldGenerator.new()
+	var sample_data = generator.generate(block_x, block_y, block_z, CHUNK_SIZE)
+	
+	# Create mesh from octree
 	var mesh_tool = MeshTool.new()
 	mesh_tool.add_vertex(Vector3(0, 0, 0), Vector3(0,0,0), self)
 	mesh_tool.add_vertex(Vector3(1, 0, 0), Vector3(0,0,0), self)
