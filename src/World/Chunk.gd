@@ -7,13 +7,17 @@ export var block_x: int
 export var block_y: int
 export var block_z: int
 
-var root
+var octree
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	# Generate samples in a grid
 	var generator = WorldGenerator.new()
-	var sample_data = generator.generate(block_x, block_y, block_z, CHUNK_SIZE)
+	var sample_data = generator.generate(block_x, block_y, block_z, CHUNK_SIZE + 1)
+	
+	# Create octree
+	octree = Octree.new()
+	octree.from_array(sample_data)
 	
 	# Create mesh from octree
 	var mesh_tool = MeshTool.new()

@@ -9,10 +9,25 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "OctreeNode",
+"class": "BranchNode",
+"language": "GDScript",
+"path": "res://src/World/Modal/BranchNode.gd"
+}, {
 "base": "MeshInstance",
 "class": "Chunk",
 "language": "GDScript",
 "path": "res://src/World/Chunk.gd"
+}, {
+"base": "OctreeNode",
+"class": "HeteroLeafNode",
+"language": "GDScript",
+"path": "res://src/World/Modal/HeteroLeafNode.gd"
+}, {
+"base": "OctreeNode",
+"class": "HomoLeafNode",
+"language": "GDScript",
+"path": "res://src/World/Modal/HomoLeafNode.gd"
 }, {
 "base": "Reference",
 "class": "MeshTool",
@@ -20,13 +35,28 @@ _global_script_classes=[ {
 "path": "res://src/World/MeshTool.gd"
 }, {
 "base": "Reference",
+"class": "Octree",
+"language": "GDScript",
+"path": "res://src/World/Modal/Octree.gd"
+}, {
+"base": "Resource",
+"class": "OctreeNode",
+"language": "GDScript",
+"path": "res://src/World/Modal/OctreeNode.gd"
+}, {
+"base": "Reference",
 "class": "WorldGenerator",
 "language": "GDScript",
 "path": "res://src/World/Generator/WorldGenerator.gd"
 } ]
 _global_script_class_icons={
+"BranchNode": "",
 "Chunk": "",
+"HeteroLeafNode": "",
+"HomoLeafNode": "",
 "MeshTool": "",
+"Octree": "",
+"OctreeNode": "",
 "WorldGenerator": ""
 }
 
