@@ -19,8 +19,15 @@ func _ready():
 	octree = Octree.new()
 	octree.from_array(sample_data)
 	
+	# Generate verticies (place using QEF minimization)
+	octree.generate_verticies()
+	
 	# Create mesh from octree
 	var mesh_tool = MeshTool.new()
+	octree.build_mesh(mesh_tool)
+	
+	# DEMO
+	mesh_tool = MeshTool.new()
 	mesh_tool.add_vertex(Vector3(0, 0, 0), Vector3(0,0,0), self)
 	mesh_tool.add_vertex(Vector3(1, 0, 0), Vector3(0,0,0), self)
 	mesh_tool.add_vertex(Vector3(0, 1, 0), Vector3(0,0,0), self)
