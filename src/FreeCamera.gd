@@ -10,10 +10,10 @@ const FAST_SPEED = 10
 
 
 var last_mouse_pos = Vector2()
-var speed = 3
+var speed = BASE_SPEED
 
 
-func _physics_process(delta):
+func _physics_process(_delta):
 	var camera_pos = camera.get_global_transform()
 	
 	if Input.is_action_pressed("sprint"):
@@ -43,7 +43,7 @@ func _physics_process(delta):
 	dir.normalized()
 	dir *= speed
 	
-	move_and_slide(dir, Vector3(0, 1, 0), 0.05, 4, deg2rad(40))
+	var _res = move_and_slide(dir, Vector3(0, 1, 0), 0.05, 4, deg2rad(40))
 
 func _input(event):
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:

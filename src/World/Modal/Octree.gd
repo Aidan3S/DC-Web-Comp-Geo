@@ -217,5 +217,6 @@ func _edge_proc(nodes: Array, direction: int, mesh_tool: MeshTool):
 				edge_nodes[j] = nodes[j]
 		_edge_proc(edge_nodes, EDGE_PROC_EDGE_MASK[direction][i][4], mesh_tool)
 
+
 func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 	pass
