@@ -20,19 +20,13 @@ func _ready():
 	octree.from_array(sample_data)
 	
 	# Generate verticies (place using QEF minimization)
-	octree.generate_verticies()
+	var mesh_tool = MeshTool.new()
+	octree.generate_verticies(mesh_tool)
 	
 	# Create mesh from octree
-	var mesh_tool = MeshTool.new()
 	octree.build_mesh(mesh_tool)
-	
-	# DEMO
-	mesh_tool = MeshTool.new()
-	mesh_tool.add_vertex(Vector3(0, 0, 0), Vector3(0,0,0), self)
-	mesh_tool.add_vertex(Vector3(1, 0, 0), Vector3(0,0,0), self)
-	mesh_tool.add_vertex(Vector3(0, 1, 0), Vector3(0,0,0), self)
-	mesh_tool.add_vertex(Vector3(1, 1, 0), Vector3(0,0,0), self)
-	mesh_tool.add_quad(0,2,1,3)
+
+	# Apply mesh
 	mesh = mesh_tool.to_mesh()
 	create_trimesh_collision()
 	print("loaded")

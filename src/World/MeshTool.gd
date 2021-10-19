@@ -5,7 +5,7 @@ var verticies = []
 var polygons = []
 
 
-func add_vertex(vertex: Vector3, normal: Vector3, parent: Node) -> int:
+func add_vertex(vertex: Vector3, normal: Vector3, parent: OctreeNode) -> int:
 	var ret_value = len(verticies)
 	verticies.append({
 		"vertex": vertex,
@@ -16,15 +16,14 @@ func add_vertex(vertex: Vector3, normal: Vector3, parent: Node) -> int:
 	return ret_value
 
 
-func add_quad(v1: int, v2: int, v3: int, v4: int) -> int:
+func add_quad(vert_list: Array) -> int:
 	var ret_value = len(polygons)
-	var vert_list = [v1, v2, v3, v4]
 	polygons.append(vert_list)
 	for vert_id in vert_list:
 		verticies[vert_id]["polygons"].append(ret_value)
 	return ret_value
 
-	
+
 func remove_polygon(poly_id: int):
 	# Remove polygon from each connected vertex
 	var update_verts = polygons[-1]

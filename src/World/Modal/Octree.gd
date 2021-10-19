@@ -55,12 +55,14 @@ const PROCESS_EDGE_MAP = [
 ]
 
 var root
+var chunk_size
 
 
 # Initializes octree from a static 3d array of values. Size of data must be size
 # 2^x + 1 in all dimensions.
 func from_array(data):
-	root = _from_array(data, 0, 0, 0, len(data) - 1)
+	chunk_size = len(data) - 1
+	root = _from_array(data, 0, 0, 0, chunk_size)
 	
 
 func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeNode:
@@ -87,10 +89,10 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 		var node = HeteroLeafNode.new()
 		# Copy weights
 		for i in range(len(VERTEX_MAP)):
-			# TODO: ADD CORNERS
 			var offset = VERTEX_MAP[i]
 			node.points[i] = data[min_x + offset[0]][min_y + offset[1]][min_z + offset[2]]
 		node.size = size
+		node.dirty = true
 		return node
 		
 	# Otherwise, this could be a branch node
@@ -120,8 +122,40 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 		return node
 
 
-func generate_verticies():
-	pass
+func generate_verticies(meshTool: MeshTool):
+	_generate_verticies(root, meshTool, 0, 0, 0, chunk_size)
+
+
+func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int):
+	# Recurse on branch nodes
+	if node is BranchNode:
+		var child_size = size / 2
+		for i in range(len(node.children)):
+			var child_x = VERTEX_MAP[i][0] * child_size + min_x
+			var child_y = VERTEX_MAP[i][1] * child_size + min_y
+			var child_z = VERTEX_MAP[i][2] * child_size + min_z
+			_generate_verticies(node.children[i], meshTool, child_x, child_y, child_z, child_size)
+
+	# Filter out only hetero nodes
+	if !(node is HeteroLeafNode):
+		return
+
+	# Don't update this node if it's not dirty
+	if !node.dirty:
+		return
+		
+	# Calculate corners variable
+	node.corners = 0
+	for i in range(len(VERTEX_MAP)):
+		node.corners <<= 1
+		var point_weight = node.points[i]
+		node.corners |= (1 if point_weight > 0 else 0)
+
+	# TODO: do vertex calculation here
+	var vertex = Vector3(min_x + 0.5, min_y + 0.5, min_z + 0.5)
+
+	# Add vertex to mesh and node
+	node.vertex = meshTool.add_vertex(vertex, Vector3.ZERO, node)
 
 
 func build_mesh(mesh_tool: MeshTool):
@@ -219,4 +253,32 @@ func _edge_proc(nodes: Array, direction: int, mesh_tool: MeshTool):
 
 
 func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
-	pass
+	# Find smallest node along edge and accumulate all verticies
+	var min_size = nodes[0].size
+	var deepest_node_index = 0
+	var verticies = []
+	verticies.resize(4)
+	for i in range(4):
+		var node = nodes[i]
+		verticies[i] = node.vertex
+		if node.size <= min_size:
+			min_size = node.size
+			deepest_node_index = i
+			
+	# Check smallest node to see if quad needs flipped
+	var deepest_node = nodes[deepest_node_index]
+	var edge = PROCESS_EDGE_MAP[direction][deepest_node_index]
+	var corner1 = EDGE_TO_CORNER[edge][0]
+	var sign1 = (deepest_node.corners >> (7 - corner1)) & 1
+	var corner2 = EDGE_TO_CORNER[edge][1]
+	var sign2 = (deepest_node.corners >> (7 - corner2)) & 1
+	# Skip this edge if it's not a crossing
+	if sign1 == sign2:
+		return
+	# This edge has a crossing - create a quad around it
+	# Flip quad direction first if sign is 0
+	if sign1 == 1:
+		var temp = verticies[2]
+		verticies[2] = verticies[1]
+		verticies[1] = temp
+	mesh_tool.add_quad(verticies)
