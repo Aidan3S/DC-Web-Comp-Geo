@@ -122,11 +122,11 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 		return node
 
 
-func generate_verticies(meshTool: MeshTool):
-	_generate_verticies(root, meshTool, 0, 0, 0, chunk_size)
+func generate_verticies(meshTool: MeshTool, generator: WorldGenerator):
+	_generate_verticies(root, meshTool, 0, 0, 0, chunk_size, generator)
 
 
-func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int):
+func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int, generator: WorldGenerator):
 	# Recurse on branch nodes
 	if node is BranchNode:
 		var child_size = size / 2
@@ -134,7 +134,7 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 			var child_x = VERTEX_MAP[i][0] * child_size + min_x
 			var child_y = VERTEX_MAP[i][1] * child_size + min_y
 			var child_z = VERTEX_MAP[i][2] * child_size + min_z
-			_generate_verticies(node.children[i], meshTool, child_x, child_y, child_z, child_size)
+			_generate_verticies(node.children[i], meshTool, child_x, child_y, child_z, child_size, generator)
 
 	# Filter out only hetero nodes
 	if !(node is HeteroLeafNode):
@@ -146,11 +146,34 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		
 	# Calculate corners variable
 	node.corners = 0
-	for i in range(len(VERTEX_MAP)):
+	for i in range(len(VERTEX_MAP) - 1, -1, -1):
 		node.corners <<= 1
 		var point_weight = node.points[i]
 		node.corners |= (1 if point_weight > 0 else 0)
 
+	# Generate edge crossing locations and normals
+	for edge_index in range(len(EDGE_TO_CORNER)):
+		var index1 = EDGE_TO_CORNER[edge_index][0]
+		var index2 = EDGE_TO_CORNER[edge_index][1]
+		# Skip edge if not a crossing
+		if ((node.corners >> index1) & 1) == ((node.corners >> index2) & 1):
+			continue
+		
+		# Estimate position of crossing
+		var n2Dist = -1 * node.points[index2]
+		var percentDist = n2Dist / (n2Dist + node.points[index1])
+		var invPercentDist = 1 - percentDist
+		var crossing = Vector3(
+			VERTEX_MAP[index1][0] * percentDist + VERTEX_MAP[index2][0] * invPercentDist,
+			VERTEX_MAP[index1][1] * percentDist + VERTEX_MAP[index2][1] * invPercentDist,
+			VERTEX_MAP[index1][2] * percentDist + VERTEX_MAP[index2][2] * invPercentDist
+		)
+		node.edge_points[edge_index] = crossing
+		
+		# Calculate normal
+		var norm = generator.sample_normal(crossing.x, crossing.y, crossing.z)
+		node.edge_normals[edge_index] = norm
+		
 	# TODO: do vertex calculation here
 	var vertex = Vector3(min_x + 0.5, min_y + 0.5, min_z + 0.5)
 
@@ -269,9 +292,9 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 	var deepest_node = nodes[deepest_node_index]
 	var edge = PROCESS_EDGE_MAP[direction][deepest_node_index]
 	var corner1 = EDGE_TO_CORNER[edge][0]
-	var sign1 = (deepest_node.corners >> (7 - corner1)) & 1
+	var sign1 = (deepest_node.corners >> corner1) & 1
 	var corner2 = EDGE_TO_CORNER[edge][1]
-	var sign2 = (deepest_node.corners >> (7 - corner2)) & 1
+	var sign2 = (deepest_node.corners >> corner2) & 1
 	# Skip this edge if it's not a crossing
 	if sign1 == sign2:
 		return

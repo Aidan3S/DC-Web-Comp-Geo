@@ -21,7 +21,7 @@ func _ready():
 	
 	# Generate verticies (place using QEF minimization)
 	var mesh_tool = MeshTool.new()
-	octree.generate_verticies(mesh_tool)
+	octree.generate_verticies(mesh_tool, generator)
 	
 	# Create mesh from octree
 	octree.build_mesh(mesh_tool)

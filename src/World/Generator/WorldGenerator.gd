@@ -2,6 +2,7 @@ class_name WorldGenerator
 
 var noise = OpenSimplexNoise.new()
 const AMPLITUDE = 10.0
+const OFFSET = 0.001
 
 
 func _init():
@@ -11,9 +12,19 @@ func _init():
 	noise.persistence = 0.8
 
 
-func sample(x: int, y: int, z: int) -> float:
+func sample(x: float, y: float, z: float) -> float:
 	var height = noise.get_noise_2d(x, z) * AMPLITUDE
 	return min(max(y - height - 10, -10.0), 10.0)
+
+
+func sample_normal(x: float, y: float, z: float) -> Vector3:
+	var base_density := sample(x, y, z)
+	var normal = Vector3(
+		base_density - sample(x + OFFSET, y, z),
+		base_density - sample(x, y + OFFSET, z),
+		base_density - sample(x, y, z + OFFSET)
+	)
+	return normal.normalized()
 
 
 func generate(start_x: int, start_y: int, start_z: int, size: int):
