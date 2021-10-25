@@ -61,8 +61,10 @@ func remove_vertex(vert_id: int):
 func to_mesh() -> Mesh:
 	# Compile vertex data
 	var comp_verts = PoolVector3Array()
+	var comp_norms = PoolVector3Array()
 	for vert_info in verticies:
 		comp_verts.push_back(vert_info["vertex"])
+		comp_norms.push_back(vert_info["normal"])
 		
 	# Compile face data
 	var comp_polys = PoolIntArray()
@@ -81,5 +83,6 @@ func to_mesh() -> Mesh:
 	composite_array.resize(ArrayMesh.ARRAY_MAX)
 	composite_array[ArrayMesh.ARRAY_VERTEX] = comp_verts
 	composite_array[ArrayMesh.ARRAY_INDEX] = comp_polys
+	composite_array[ArrayMesh.ARRAY_NORMAL] = comp_norms
 	array_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, composite_array)
 	return array_mesh

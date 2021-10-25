@@ -71,6 +71,14 @@ func transpose():
 			result[j][i] = data[i][j]
 			
 	return result
+	
+	
+func append_AtBt(normal: Vector3, position: Vector3):
+	var vec_to_add = normal * normal.dot(position)
+	data[0][0] += vec_to_add.x
+	data[0][1] += vec_to_add.y
+	data[0][2] += vec_to_add.z
+	
 
 
 func debug_print():

@@ -17,3 +17,11 @@ shape = SubResource( 1 )
 current = true
 fov = 90.0
 near = 0.1
+
+[node name="SpotLight" type="SpotLight" parent="CameraRotator/Camera"]
+light_color = Color( 0.94902, 0.878431, 0.662745, 1 )
+light_energy = 4.41
+light_bake_mode = 0
+shadow_enabled = true
+spot_range = 16.0068
+spot_angle = 19.3123

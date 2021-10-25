@@ -17,12 +17,21 @@ func sample(x: float, y: float, z: float) -> float:
 	return min(max(y - height - 10, -10.0), 10.0)
 
 
+func sample_flat(x: float, y: float, z: float) -> float:
+	var height = 5.0
+	var ret_val = min(max(y - height - 10.0, -10.0), 10.0)
+	return ret_val
+
+
 func sample_normal(x: float, y: float, z: float) -> Vector3:
-	var base_density := sample(x, y, z)
+	var base_density = sample(x, y, z)
+	var a = sample(x, 10.0, z)
+	var b = sample(x, 20.0, z)
+	var c = sample(x, 10.001, z)
 	var normal = Vector3(
-		base_density - sample(x + OFFSET, y, z),
-		base_density - sample(x, y + OFFSET, z),
-		base_density - sample(x, y, z + OFFSET)
+		base_density - sample(x - OFFSET, y, z),
+		base_density - sample(x, y - OFFSET, z),
+		base_density - sample(x, y, z - OFFSET)
 	)
 	return normal.normalized()
 
