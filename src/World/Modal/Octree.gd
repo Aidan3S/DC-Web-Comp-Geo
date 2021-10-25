@@ -151,6 +151,11 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		var point_weight = node.points[i]
 		node.corners |= (1 if point_weight > 0 else 0)
 
+	var AtA = Matrix.new([
+		[0, 0, 0],
+		[0, 0, 0],
+		[0, 0, 0]
+	])
 	# Generate edge crossing locations and normals
 	for edge_index in range(len(EDGE_TO_CORNER)):
 		var index1 = EDGE_TO_CORNER[edge_index][0]
@@ -173,6 +178,8 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		# Calculate normal
 		var norm = generator.sample_normal(crossing.x, crossing.y, crossing.z)
 		node.edge_normals[edge_index] = norm
+		
+		# Add to AtA matrix
 		
 	# TODO: do vertex calculation here
 	var vertex = Vector3(min_x + 0.5, min_y + 0.5, min_z + 0.5)
