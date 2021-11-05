@@ -16,9 +16,12 @@ func add_vertex(vertex: Vector3, normal: Vector3, parent: OctreeNode) -> int:
 	return ret_value
 
 
-func add_quad(vert_list: Array) -> int:
+func add_quad(vert_list: Array, material: int = 1) -> int:
 	var ret_value = len(polygons)
-	polygons.append(vert_list)
+	polygons.append({
+		"verts": vert_list,
+		"marterial": material
+	})
 	for vert_id in vert_list:
 		verticies[vert_id]["polygons"].append(ret_value)
 	return ret_value
@@ -26,14 +29,13 @@ func add_quad(vert_list: Array) -> int:
 
 func remove_polygon(poly_id: int):
 	# Remove polygon from each connected vertex
-	var update_verts = polygons[-1]
-	for vertex_id in polygons[poly_id]:
+	for vertex_id in polygons[poly_id]["verts"]:
 		verticies[vertex_id]["polygons"].erase(poly_id)
 		
 	# If there are polygons left, copy the last one and update its verts
 	if poly_id != len(polygons) - 1:
 		polygons[poly_id] = polygons[-1]
-		for vertex_id in polygons[poly_id]:
+		for vertex_id in polygons[poly_id]["verts"]:
 			var replace_index = verticies[vertex_id]["polygons"].find(len(polygons) - 1)
 			verticies[vertex_id]["polygons"][replace_index] = poly_id
 			
@@ -51,11 +53,11 @@ func remove_vertex(vert_id: int):
 	if vert_id != len(verticies) - 1:
 		verticies[vert_id] = verticies[-1]
 		for poly_id in verticies[vert_id]["polygons"]:
-			var replace_index = polygons[poly_id].find(len(verticies) - 1)
-			polygons[poly_id][replace_index] = vert_id
+			var replace_index = polygons[poly_id]["verts"].find(len(verticies) - 1)
+			polygons[poly_id]["verts"][replace_index] = vert_id
 			
 	# Remove last vertex (it's now duplicated)
-	polygons.remove(-1)
+	verticies.remove(-1)
 	
 
 func to_mesh() -> Mesh:
@@ -69,13 +71,14 @@ func to_mesh() -> Mesh:
 	# Compile face data
 	var comp_polys = PoolIntArray()
 	for poly in polygons:
-		comp_polys.push_back(poly[0])
-		comp_polys.push_back(poly[1])
-		comp_polys.push_back(poly[3])
+		var verts = poly["verts"]
+		comp_polys.push_back(verts[0])
+		comp_polys.push_back(verts[1])
+		comp_polys.push_back(verts[3])
 		
-		comp_polys.push_back(poly[0])
-		comp_polys.push_back(poly[3])
-		comp_polys.push_back(poly[2])
+		comp_polys.push_back(verts[0])
+		comp_polys.push_back(verts[3])
+		comp_polys.push_back(verts[2])
 	
 	# Put data into ArrayMesh
 	var array_mesh = ArrayMesh.new()
