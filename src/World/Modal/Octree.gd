@@ -54,6 +54,8 @@ const PROCESS_EDGE_MAP = [
 	PoolIntArray([3,2,1,0]), PoolIntArray([7,5,6,4]), PoolIntArray([11,10,9,8])
 ]
 
+const EIGEN_THRESHOLD = 0.01
+
 var root
 var chunk_size
 
@@ -152,15 +154,12 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		node.corners |= (1 if point_weight > 0 else 0)
 
 	# Create matricies for holding data for QEF solver
-	var AtA = Matrix.new([
-		[0, 0, 0],
-		[0, 0, 0],
-		[0, 0, 0]
-	])
+	var A_mat = []
 	# Transpose of the AtB matrix
-	var AtBt = Matrix.new([[0, 0, 0]])
-	# Calculate average normal
+	var B_mat = []
+	# Calculate average normal and point
 	var avg_norm = Vector3.ZERO
+	var avg_point = Vector3.ZERO
 	var num_norm = 0
 	
 	# Generate edge crossing locations and normals
@@ -187,23 +186,49 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		node.edge_normals[edge_index] = norm
 		
 		# Add to AtA matrix
-		var normal_mat = Matrix.new([[norm.x, norm.y, norm.z]])
-		var normal_trans = Matrix.new(normal_mat.transpose())
-		var to_append = Matrix.new(normal_trans.multiply(normal_mat))
-		AtA = Matrix.new(AtA.add(to_append))
+		var normal_vec = [norm.x, norm.y, norm.z]
+		A_mat.append(normal_vec)
 		
-		AtBt.append_AtBt(norm, crossing)
+		# Add to AtB matrix
+		var to_append = LinAlg.dot_vv([crossing.x, crossing.y, crossing.z], normal_vec)
+		B_mat.append([to_append])
+		# AtBt.append_AtBt(norm, crossing)
 		
 		# Add to average normal
 		avg_norm += norm
+		avg_point += crossing
 		num_norm += 1
-		
-	# TODO: do vertex calculation here
-	var vertex = Vector3(min_x + 0.5, min_y + 0.5, min_z + 0.5)
+	
+	"""
+	# Create AtA and AtB
+	var At = LinAlg.transpose(A_mat)
+	var AtA = LinAlg.dot_mm(At, A_mat)
+	var AtB = LinAlg.dot_mm(At, B_mat)
+	
+	# Calculate AtA inverse
+	var eigs = LinAlg.eigs_powerit(AtA)
+	var eigen_values = eigs[0]
+	var eigen_vectors = eigs[1]
+	for ev_index in range(len(eigen_values)):
+		if eigen_values[ev_index] < EIGEN_THRESHOLD:
+			eigen_values[ev_index] = 0
+	var D0_inv = [
+		[eigen_values[0], 0, 0],
+		[0, eigen_values[1], 0],
+		[0, 0, eigen_values[2]]
+	]
+	var eigen_vectors_T = LinAlg.transpose(eigen_vectors)
+	var AtA_inv = LinAlg.dot_mm(LinAlg.dot_mm(eigen_vectors_T, D0_inv), eigen_vectors)
+	
+	# Solve for x (vertex)
+	var sol = LinAlg.dot_mm(AtA_inv, AtB)
+	var vertex = Vector3(sol[0][0] + min_x, sol[1][0] + min_y, sol[2][0] + min_z)
+	"""
 
 	# Add vertex to mesh and node
 	avg_norm = avg_norm / num_norm
-	node.vertex = meshTool.add_vertex(vertex, avg_norm, node)
+	avg_point = avg_point / num_norm
+	node.vertex = meshTool.add_vertex(avg_point + Vector3(min_x, min_y, min_z), avg_norm, node)
 
 
 func build_mesh(mesh_tool: MeshTool):
