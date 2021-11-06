@@ -3,6 +3,8 @@
 [sub_resource type="ProceduralSky" id=1]
 
 [resource]
-background_mode = 1
+background_mode = 2
 background_sky = SubResource( 1 )
 background_color = Color( 0.419608, 0.764706, 0.898039, 1 )
+auto_exposure_min_luma = 0.2
+glow_enabled = true

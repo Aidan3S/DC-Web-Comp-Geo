@@ -93,6 +93,13 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 		for i in range(len(VERTEX_MAP)):
 			var offset = VERTEX_MAP[i]
 			node.points[i] = data[min_x + offset[0]][min_y + offset[1]][min_z + offset[2]]
+			# Temp: generate materials
+			if data[min_x + offset[0]][min_y + offset[1]][min_z + offset[2]] > 0:
+				node.point_materials[i] = 0
+			elif min_y + offset[1] < 16:
+				node.point_materials[i] = 2
+			else:
+				node.point_materials[i] = 1
 		node.size = size
 		node.dirty = true
 		return node
@@ -350,8 +357,13 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 		return
 	# This edge has a crossing - create a quad around it
 	# Flip quad direction first if sign is 0
+	# Also set the material
+	var material
 	if sign1 == 1:
 		var temp = verticies[2]
 		verticies[2] = verticies[1]
 		verticies[1] = temp
-	mesh_tool.add_quad(verticies)
+		material = deepest_node.point_materials[corner2]
+	else:
+		material = deepest_node.point_materials[corner1]
+	mesh_tool.add_quad(verticies, material)
