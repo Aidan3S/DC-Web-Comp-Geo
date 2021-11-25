@@ -17,7 +17,7 @@ func sample_2p(x: float, y: float, z: float) -> float:
 	return min(max(y - height - 10, -10.0), 10.0)
 
 
-func sample_circle(x: float, y: float, z: float) -> float:
+func sample(x: float, y: float, z: float) -> float:
 	var loc = Vector3(x, y, z) - Vector3(16.1, 16, 16)
 	return loc.distance_to(Vector3.ZERO) - 15
 
@@ -27,7 +27,7 @@ func sample_flat(x: float, y: float, z: float) -> float:
 	var ret_val = min(max(height - 10.0, -10.0), 10.0)
 	return ret_val
 
-func sample(x: float, y: float, z: float) -> float:
+func sample_3d(x: float, y: float, z: float) -> float:
 	var height = noise.get_noise_3d(x, y, z)
 	return height
 
