@@ -25,6 +25,10 @@ spot_range = 22.2454
 spot_attenuation = 1.56917
 spot_angle = 27.5638
 
+[node name="RayCast" type="RayCast" parent="CameraRotator/Camera"]
+enabled = true
+cast_to = Vector3( 0, 0, -3 )
+
 [node name="OmniLight" type="OmniLight" parent="CameraRotator"]
 visible = false
 light_energy = 0.23

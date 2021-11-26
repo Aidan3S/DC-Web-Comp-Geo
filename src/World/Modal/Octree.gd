@@ -21,6 +21,17 @@ const EDGE_TO_CORNER = [
 	PoolIntArray([0,1,2]), PoolIntArray([2,3,2]), PoolIntArray([4,5,2]), PoolIntArray([6,7,2])
 ]
 
+const CORNER_TO_EDGE = [
+	PoolIntArray([0, 4, 8]),
+	PoolIntArray([1, 6, 8]),
+	PoolIntArray([2, 8, 9]),
+	PoolIntArray([3, 6, 9]),
+	PoolIntArray([0, 5, 10]),
+	PoolIntArray([1, 7, 10]),
+	PoolIntArray([2, 5, 11]),
+	PoolIntArray([3, 6, 11])
+]
+
 const CELL_PROC_EDGE_MASK = [
 	PoolIntArray([0,1,2,3,0]), PoolIntArray([4,5,6,7,0]),
 	PoolIntArray([0,4,1,5,1]), PoolIntArray([2,6,3,7,1]),
@@ -85,6 +96,13 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 			var node = HomoLeafNode.new()
 			node.size = size
 			node.has_mass = !weight_sign
+			# Temp: generate materials
+			if !node.has_mass:
+				node.material = 0
+			elif min_y < 16:
+				node.material = 2
+			else:
+				node.material = 1
 			return node
 			
 		# Return hetrogenous node otherwise
@@ -341,3 +359,59 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 	else:
 		material = deepest_node.point_materials[corner1]
 	mesh_tool.add_quad(verticies, material)
+
+func apply_func(generator: WorldGenerator, subtract: bool, lower: Vector3, upper: Vector3):
+	_apply_func(root, generator, subtract, lower, upper, Vector3.ZERO, chunk_size)
+
+func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, lower: Vector3, upper: Vector3, min_pos: Vector3, size: int):
+	var child_size = size / 2
+	# Due to silly restrictions in gdscript, we have to handle this in octree,
+	# not in the nodes themselves. BranchNodes can't instatiate more branches.
+	if n is BranchNode:
+		# Make call on all children
+		for i in range(8):
+			var child_pos = Vector3(
+				VERTEX_MAP[i][0] * child_size + min_pos.x,
+				VERTEX_MAP[i][1] * child_size + min_pos.y,
+				VERTEX_MAP[i][2] * child_size + min_pos.z
+			)
+			var replacement = _apply_func(n.children[i], generator, subtract, lower, upper, child_pos, size / 2)
+			if replacement != null:
+				n.children[i] = replacement
+		# Check for collapse
+		for child in n.children:
+			if not child is HomoLeafNode:
+				return null
+		# All are homogenous, collapse this node
+		return n.children[0]
+	
+	elif n is HeteroLeafNode:
+		var update_edges = []
+		for i in range(len(EDGE_TO_CORNER)):
+			update_edges.appned(false)
+		# Update all corners
+		for i in range(len(VERTEX_MAP)):
+			var offset = VERTEX_MAP[i]
+			var value = generator.sample(min_pos.x + offset[0], min_pos.y + offset[1], min_pos.z + offset[2])
+			var had_mass = n.points[i] <= 0
+			# Check if we should replace
+			if (subtract and value > n.points[i]) or (!subtract and value < n.points[i]):
+				# Replace value
+				n.points[i] = value
+				# Check if sign changed
+				if had_mass != (n.points[i] <= 0):
+					# If changed, add to edge update list
+					for edge_id in CORNER_TO_EDGE[i]:
+						var c1 = EDGE_TO_CORNER[i][0]
+						var c2 = EDGE_TO_CORNER[i][1]
+						update_edges[edge_id] = (n.points[c1] <= 0 and n.points[c2] > 0) or (n.points[c1] > 0 and n.points[c2] <= 0)
+						
+		# Update changed edges
+		var recalc_point = false
+		for i in range(len(EDGE_TO_CORNER)):
+			if update_edges[i]:
+				recalc_point = true
+				
+	
+	elif n in HomoLeafNode:
+		pass

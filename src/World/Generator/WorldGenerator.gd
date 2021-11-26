@@ -17,7 +17,7 @@ func sample_2p(x: float, y: float, z: float) -> float:
 	return min(max(y - height - 10, -10.0), 10.0)
 
 
-func sample(x: float, y: float, z: float) -> float:
+func sample_sphere(x: float, y: float, z: float) -> float:
 	var loc = Vector3(x, y, z) - Vector3(16.1, 16, 16)
 	return loc.distance_to(Vector3.ZERO) - 15
 
@@ -31,7 +31,7 @@ func sample_3d(x: float, y: float, z: float) -> float:
 	var height = noise.get_noise_3d(x, y, z)
 	return height
 
-func sample_cube(x: float, y: float, z: float) -> float:
+func sample(x: float, y: float, z: float) -> float:
 	var center = 16
 	var pos = Vector3(
 		abs(x - 16) - 10.5,

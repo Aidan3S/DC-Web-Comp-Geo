@@ -2,6 +2,7 @@ extends KinematicBody
 
 onready var camera = $CameraRotator/Camera
 onready var camera_rotator = $CameraRotator
+onready var ray_cast = $CameraRotator/Camera/RayCast
 
 const MOUSE_SENS = 0.11
 const BASE_SPEED = 3
@@ -61,3 +62,8 @@ func _input(event):
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			get_viewport().warp_mouse(last_mouse_pos)
+	
+	if event.is_action_pressed("break"):
+		var collider = ray_cast.get_collider()
+		if collider != null:
+			collider.get_parent().break_block(ray_cast.get_collision_point())

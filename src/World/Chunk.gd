@@ -9,6 +9,8 @@ export var block_z: int
 
 var octree
 
+onready var test = $Marker
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	# Generate samples in a grid
@@ -30,3 +32,9 @@ func _ready():
 	mesh = mesh_tool.to_mesh()
 	create_trimesh_collision()
 	print("loaded")
+
+func break_block(world_pos: Vector3):
+	var local_pos = (world_pos - transform.origin) / scale
+	local_pos = Vector3(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
+	test.transform.origin = local_pos + Vector3(0.5, 0.5, 0.5)
+	
