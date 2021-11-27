@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://test.gd" type="Script" id=1]
 [ext_resource path="res://src/World/Chunk.gd" type="Script" id=2]
 [ext_resource path="res://src/FreeCamera.tscn" type="PackedScene" id=3]
+[ext_resource path="res://src/VictoryRock.tscn" type="PackedScene" id=4]
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 1 )
@@ -18,3 +19,6 @@ script = ExtResource( 2 )
 transform = Transform( -0.798808, 0.224516, -0.55812, -0.329082, 0.613553, 0.717815, 0.503597, 0.757064, -0.416227, 0, 6.61332, 0 )
 light_bake_mode = 0
 shadow_enabled = true
+
+[node name="VictoryRock" parent="." instance=ExtResource( 4 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 8.97766, 4.82977, 8.78209 )
