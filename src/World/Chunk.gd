@@ -9,7 +9,6 @@ export var block_z: int
 
 var octree
 
-onready var test = $Marker
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -36,5 +35,12 @@ func _ready():
 func break_block(world_pos: Vector3):
 	var local_pos = (world_pos - transform.origin) / scale
 	local_pos = Vector3(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
-	test.transform.origin = local_pos + Vector3(0.5, 0.5, 0.5)
+	var generator = SphereGeneratorNegative.new(2, local_pos)
+	var mesh_tool = MeshTool.new()
+	octree.apply_func(generator, true, mesh_tool)
 	
+	# Apply mesh
+	mesh = mesh_tool.to_mesh()
+	remove_child(get_child(0))
+	create_trimesh_collision()
+	print("loaded")

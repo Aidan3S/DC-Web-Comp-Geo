@@ -13,6 +13,8 @@ const FAST_SPEED = 10
 var last_mouse_pos = Vector2()
 var speed = BASE_SPEED
 
+func _init():
+	VisualServer.set_debug_generate_wireframes(true)
 
 func _physics_process(_delta):
 	var camera_pos = camera.get_global_transform()
@@ -67,3 +69,7 @@ func _input(event):
 		var collider = ray_cast.get_collider()
 		if collider != null:
 			collider.get_parent().break_block(ray_cast.get_collision_point())
+
+	if event is InputEventKey and Input.is_key_pressed(KEY_P):
+		var vp = get_viewport()
+		vp.debug_draw = (vp.debug_draw + 1 ) % 4

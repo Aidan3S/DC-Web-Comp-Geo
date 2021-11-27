@@ -54,6 +54,16 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/World/Modal/OctreeNode.gd"
 }, {
+"base": "WorldGenerator",
+"class": "SphereGenerator",
+"language": "GDScript",
+"path": "res://src/World/Generator/SphereGenerator.gd"
+}, {
+"base": "WorldGenerator",
+"class": "SphereGeneratorNegative",
+"language": "GDScript",
+"path": "res://src/World/Generator/SphereGeneratorNegative.gd"
+}, {
 "base": "Reference",
 "class": "WorldGenerator",
 "language": "GDScript",
@@ -69,6 +79,8 @@ _global_script_class_icons={
 "MeshTool": "",
 "Octree": "",
 "OctreeNode": "",
+"SphereGenerator": "",
+"SphereGeneratorNegative": "",
 "WorldGenerator": ""
 }
 

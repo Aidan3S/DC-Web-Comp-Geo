@@ -152,6 +152,63 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 func generate_verticies(meshTool: MeshTool, generator: WorldGenerator):
 	_generate_verticies(root, meshTool, 0, 0, 0, chunk_size, generator)
 
+func _calc_point(node: HeteroLeafNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int, generator: WorldGenerator):
+	# Calculate average normal and point
+	var avg_norm = Vector3.ZERO
+	var avg_point = Vector3.ZERO
+	var num_norm = 0
+	
+	# Generate edge crossing locations and normals
+	for edge_index in range(len(EDGE_TO_CORNER)):
+		# Skip edge if it's not dirty
+		if !node.edge_dirty[edge_index]:
+			continue
+		var index1 = EDGE_TO_CORNER[edge_index][0]
+		var index2 = EDGE_TO_CORNER[edge_index][1]
+		# Skip edge if not a crossing
+		if ((node.corners >> index1) & 1) == ((node.corners >> index2) & 1):
+			node.edge_points[edge_index] = null
+			node.edge_normals[edge_index] = null
+			node.edge_dirty[edge_index] = false
+			continue
+		
+		# Estimate position of crossing
+		var n2Dist = -1 * node.points[index2]
+		var percentDist = n2Dist / (n2Dist + node.points[index1])
+		var invPercentDist = 1 - percentDist
+		var crossing = Vector3(
+			VERTEX_MAP[index1][0] * percentDist + VERTEX_MAP[index2][0] * invPercentDist,
+			VERTEX_MAP[index1][1] * percentDist + VERTEX_MAP[index2][1] * invPercentDist,
+			VERTEX_MAP[index1][2] * percentDist + VERTEX_MAP[index2][2] * invPercentDist
+		)
+		node.edge_points[edge_index] = crossing
+		
+		# Calculate normal
+		var norm = generator.sample_normal(crossing.x + min_x, crossing.y + min_y, crossing.z + min_z)
+		node.edge_normals[edge_index] = norm
+
+		node.edge_points[edge_index] = crossing
+		node.edge_normals[edge_index] = norm
+		
+		# Add to average normal
+		avg_norm += norm
+		avg_point += crossing
+		num_norm += 1
+		
+		node.edge_dirty[edge_index] = false
+	
+	# Forward to C# for processing
+	var normals = []
+	var crossings = []
+	for i in range(len(node.edge_points)):
+		if node.edge_points[i] != null:
+			normals.append(node.edge_normals[i])
+			crossings.append(node.edge_points[i])
+	node.solve_point = QEFSolver.solve(normals, crossings) + Vector3(min_x, min_y, min_z)
+
+	# Add vertex to mesh and node
+	node.avg_norm = avg_norm / num_norm
+	node.vertex = meshTool.add_vertex(node.solve_point, node.avg_norm, node)
 
 func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int, generator: WorldGenerator):
 	# Recurse on branch nodes
@@ -178,56 +235,8 @@ func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y
 		var point_weight = node.points[i]
 		node.corners |= (1 if point_weight > 0 else 0)
 
-	# Create matricies for holding data for QEF solver
-	var normals = []
-	# Transpose of the AtB matrix
-	var crossings = []
-	# Calculate average normal and point
-	var avg_norm = Vector3.ZERO
-	var avg_point = Vector3.ZERO
-	var num_norm = 0
-	
-	# Generate edge crossing locations and normals
-	for edge_index in range(len(EDGE_TO_CORNER)):
-		var index1 = EDGE_TO_CORNER[edge_index][0]
-		var index2 = EDGE_TO_CORNER[edge_index][1]
-		# Skip edge if not a crossing
-		if ((node.corners >> index1) & 1) == ((node.corners >> index2) & 1):
-			continue
-		
-		# Estimate position of crossing
-		var n2Dist = -1 * node.points[index2]
-		var percentDist = n2Dist / (n2Dist + node.points[index1])
-		var invPercentDist = 1 - percentDist
-		var crossing = Vector3(
-			VERTEX_MAP[index1][0] * percentDist + VERTEX_MAP[index2][0] * invPercentDist,
-			VERTEX_MAP[index1][1] * percentDist + VERTEX_MAP[index2][1] * invPercentDist,
-			VERTEX_MAP[index1][2] * percentDist + VERTEX_MAP[index2][2] * invPercentDist
-		)
-		node.edge_points[edge_index] = crossing
-		
-		# Calculate normal
-		var norm = generator.sample_normal(crossing.x + min_x, crossing.y + min_y, crossing.z + min_z)
-		node.edge_normals[edge_index] = norm
-		
-		# Add to AtA matrix
-		normals.append(norm)
-		
-		# Add to AtB matrix
-		crossings.append(crossing)
-		
-		# Add to average normal
-		avg_norm += norm
-		avg_point += crossing
-		num_norm += 1
-	
-	# Forward to C# for processing
-	var solve_point = QEFSolver.solve(normals, crossings)
-
-	# Add vertex to mesh and node
-	avg_norm = avg_norm / num_norm
-	avg_point = avg_point / num_norm
-	node.vertex = meshTool.add_vertex(solve_point + Vector3(min_x, min_y, min_z), avg_norm, node)
+	# Update edges, normals, and calculate vertex location
+	_calc_point(node, meshTool, min_x, min_y, min_z, size, generator)
 
 
 func build_mesh(mesh_tool: MeshTool):
@@ -360,10 +369,17 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 		material = deepest_node.point_materials[corner1]
 	mesh_tool.add_quad(verticies, material)
 
-func apply_func(generator: WorldGenerator, subtract: bool, lower: Vector3, upper: Vector3):
-	_apply_func(root, generator, subtract, lower, upper, Vector3.ZERO, chunk_size)
 
-func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, lower: Vector3, upper: Vector3, min_pos: Vector3, size: int):
+func apply_func(generator: WorldGenerator, subtract: bool, meshTool: MeshTool):
+	print("Before: " + str(_count_verts(root)))
+	var new_root =_apply_func(root, generator, subtract, Vector3.ZERO, chunk_size, meshTool)
+	print("After: " + str(_count_verts(root)))
+	if new_root != null:
+		root = new_root
+	build_mesh(meshTool)
+
+
+func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_pos: Vector3, size: int, meshTool: MeshTool):
 	var child_size = size / 2
 	# Due to silly restrictions in gdscript, we have to handle this in octree,
 	# not in the nodes themselves. BranchNodes can't instatiate more branches.
@@ -375,7 +391,7 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, lower
 				VERTEX_MAP[i][1] * child_size + min_pos.y,
 				VERTEX_MAP[i][2] * child_size + min_pos.z
 			)
-			var replacement = _apply_func(n.children[i], generator, subtract, lower, upper, child_pos, size / 2)
+			var replacement = _apply_func(n.children[i], generator, subtract, child_pos, child_size, meshTool)
 			if replacement != null:
 				n.children[i] = replacement
 		# Check for collapse
@@ -383,12 +399,12 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, lower
 			if not child is HomoLeafNode:
 				return null
 		# All are homogenous, collapse this node
+		n.children[0].size = size
 		return n.children[0]
 	
 	elif n is HeteroLeafNode:
-		var update_edges = []
-		for i in range(len(EDGE_TO_CORNER)):
-			update_edges.appned(false)
+		var dirty = false
+		
 		# Update all corners
 		for i in range(len(VERTEX_MAP)):
 			var offset = VERTEX_MAP[i]
@@ -398,20 +414,78 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, lower
 			if (subtract and value > n.points[i]) or (!subtract and value < n.points[i]):
 				# Replace value
 				n.points[i] = value
+				dirty = true
 				# Check if sign changed
 				if had_mass != (n.points[i] <= 0):
-					# If changed, add to edge update list
-					for edge_id in CORNER_TO_EDGE[i]:
-						var c1 = EDGE_TO_CORNER[i][0]
-						var c2 = EDGE_TO_CORNER[i][1]
-						update_edges[edge_id] = (n.points[c1] <= 0 and n.points[c2] > 0) or (n.points[c1] > 0 and n.points[c2] <= 0)
-						
+					# Replace material
+					n.point_materials[i] = 0 if n.points[i] <= 0 else 1
+					# Adjust corner bits
+					if n.points[i] <= 0:
+						n.corners &= ~(1 << i)
+					else:
+						n.corners |= 1 << i
+					# Mark edges dirty
+					for edge_index in range(3):
+						n.edge_dirty[CORNER_TO_EDGE[i][0]] = true
+						n.edge_dirty[CORNER_TO_EDGE[i][1]] = true
+						n.edge_dirty[CORNER_TO_EDGE[i][2]] = true
+
 		# Update changed edges
-		var recalc_point = false
-		for i in range(len(EDGE_TO_CORNER)):
-			if update_edges[i]:
-				recalc_point = true
-				
+		if dirty:
+			# Collapse if no longer a crossing
+			if n.corners == 0 or n.corners == 255:
+				var new_node = HomoLeafNode.new()
+				new_node.has_mass = n.points[0] <= 0
+				new_node.material = n.point_materials[0]
+				new_node.size = 1
+				return new_node
+			_calc_point(n, meshTool, min_pos.x, min_pos.y, min_pos.z, size, generator)
+		else:
+			n.vertex = meshTool.add_vertex(n.solve_point, n.avg_norm, n)
 	
-	elif n in HomoLeafNode:
-		pass
+	elif n is HomoLeafNode:
+		# Check area for changed signs
+		for x in range(min_pos.x, min_pos.x + size + 1):
+			for y in range(min_pos.y, min_pos.y + size + 1):
+				for z in range(min_pos.z, min_pos.z + size + 1):
+					# Check if different sign
+					var sample = generator.sample(x, y, z)
+					if sample > 0 and n.has_mass:
+						print("BIG")
+					if (subtract and (sample > 0) and n.has_mass) or (!subtract and (sample <= 0) and !n.has_mass):
+						# Break this node down
+						if size == 1:
+							# Break into heterogenous node
+							var val = -1 if n.has_mass else 1
+							var new_node = HeteroLeafNode.new()
+							new_node.corners = 0 if n.has_mass else 255
+							new_node.size = size
+							for i in range(len(new_node.points)):
+								new_node.points[i] = val
+								new_node.point_materials[i] = n.material
+							_apply_func(new_node, generator, subtract, min_pos, size, meshTool)
+							return new_node
+						else:
+							# Break into branch
+							var new_node = BranchNode.new()
+							new_node.size = size
+							for i in range(len(new_node.children)):
+								var new_child = HomoLeafNode.new()
+								new_child.size = child_size
+								new_child.has_mass = n.has_mass
+								new_child.material = n.material
+								new_node.children[i] = new_child
+							_apply_func(new_node, generator, subtract, min_pos, size, meshTool)
+							return new_node
+	return null
+
+func _count_verts(node: OctreeNode):
+	if node is HeteroLeafNode:
+		return 0
+	elif node is HomoLeafNode:
+		return 1 if node.has_mass else 0
+	else:
+		var sum = 0
+		for c in node.children:
+			sum += _count_verts(c)
+		return sum
