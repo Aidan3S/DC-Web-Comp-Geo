@@ -9,6 +9,7 @@ export var block_z: int
 
 var octree
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	# Generate samples in a grid
@@ -28,5 +29,18 @@ func _ready():
 
 	# Apply mesh
 	mesh = mesh_tool.to_mesh()
+	create_trimesh_collision()
+	print("loaded")
+
+func break_block(world_pos: Vector3):
+	var local_pos = (world_pos - transform.origin) / scale
+	local_pos = Vector3(floor(local_pos.x), floor(local_pos.y), floor(local_pos.z))
+	var generator = SphereGeneratorNegative.new(2, local_pos)
+	var mesh_tool = MeshTool.new()
+	octree.apply_func(generator, true, mesh_tool)
+	
+	# Apply mesh
+	mesh = mesh_tool.to_mesh()
+	remove_child(get_child(0))
 	create_trimesh_collision()
 	print("loaded")

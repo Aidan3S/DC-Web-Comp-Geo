@@ -2,6 +2,7 @@ extends KinematicBody
 
 onready var camera = $CameraRotator/Camera
 onready var camera_rotator = $CameraRotator
+onready var ray_cast = $CameraRotator/Camera/RayCast
 
 const MOUSE_SENS = 0.11
 const BASE_SPEED = 3
@@ -12,6 +13,8 @@ const FAST_SPEED = 10
 var last_mouse_pos = Vector2()
 var speed = BASE_SPEED
 
+func _init():
+	VisualServer.set_debug_generate_wireframes(true)
 
 func _physics_process(_delta):
 	var camera_pos = camera.get_global_transform()
@@ -61,3 +64,12 @@ func _input(event):
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 			get_viewport().warp_mouse(last_mouse_pos)
+	
+	if event.is_action_pressed("break"):
+		var collider = ray_cast.get_collider()
+		if collider != null:
+			collider.get_parent().break_block(ray_cast.get_collision_point())
+
+	if event is InputEventKey and Input.is_key_pressed(KEY_P):
+		var vp = get_viewport()
+		vp.debug_draw = (vp.debug_draw + 1 ) % 4
