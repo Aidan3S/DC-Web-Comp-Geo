@@ -198,11 +198,6 @@ func _calc_point(node: HeteroLeafNode, meshTool: MeshTool, min_x: int, min_y: in
 		node.edge_points[edge_index] = crossing
 		node.edge_normals[edge_index] = norm
 		
-		# Add to average normal
-		avg_norm += norm
-		avg_point += crossing
-		num_norm += 1
-		
 		node.edge_dirty[edge_index] = false
 	
 	# Forward to C# for processing
@@ -214,8 +209,16 @@ func _calc_point(node: HeteroLeafNode, meshTool: MeshTool, min_x: int, min_y: in
 			crossings.append(node.edge_points[i])
 	node.solve_point = QEFSolver.solve(normals, crossings) + Vector3(min_x, min_y, min_z)
 
-	# Add vertex to mesh and node
-	node.avg_norm = avg_norm / num_norm
+	# Calculate average normal
+	var num_normals = 0
+	var sum_normals = Vector3.ZERO
+	for normal in node.edge_normals:
+		if normal != null:
+			sum_normals += normal
+			num_normals += 1
+	node.avg_norm = sum_normals / num_normals
+	
+	# Add vertex to mesh
 	node.vertex = meshTool.add_vertex(node.solve_point, node.avg_norm, node)
 
 func _generate_verticies(node: OctreeNode, meshTool: MeshTool, min_x: int, min_y: int, min_z: int, size: int, generator: WorldGenerator):
