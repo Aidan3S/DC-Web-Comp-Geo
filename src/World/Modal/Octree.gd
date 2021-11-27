@@ -139,6 +139,14 @@ func _from_array(data, min_x: int, min_y: int, min_z: int, size: int) -> OctreeN
 	if homo:
 		var node = HomoLeafNode.new()
 		node.has_mass = children[0].has_mass
+		# Temp: generate materials
+		if !node.has_mass:
+			node.material = 0
+		elif min_y < 16:
+			node.material = 2
+		else:
+			node.material = 1
+		return node
 		node.size = size
 		return node
 	else:
@@ -371,9 +379,7 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 
 
 func apply_func(generator: WorldGenerator, subtract: bool, meshTool: MeshTool):
-	print("Before: " + str(_count_verts(root)))
 	var new_root =_apply_func(root, generator, subtract, Vector3.ZERO, chunk_size, meshTool)
-	print("After: " + str(_count_verts(root)))
 	if new_root != null:
 		root = new_root
 	build_mesh(meshTool)
@@ -450,8 +456,6 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 				for z in range(min_pos.z, min_pos.z + size + 1):
 					# Check if different sign
 					var sample = generator.sample(x, y, z)
-					if sample > 0 and n.has_mass:
-						print("BIG")
 					if (subtract and (sample > 0) and n.has_mass) or (!subtract and (sample <= 0) and !n.has_mass):
 						# Break this node down
 						if size == 1:
