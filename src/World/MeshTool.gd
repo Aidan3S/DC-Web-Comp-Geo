@@ -7,6 +7,7 @@ var materials = {
 	"0": preload("res://src/Materials/M_Test.tres"),
 	"1": preload("res://src/Materials/M_Grass.tres"),
 	"2": preload("res://src/Materials/M_Dirt.tres"),
+	"3": preload("res://src/Materials/M_Brick.tres"),
 }
 
 
@@ -29,8 +30,6 @@ func add_quad(vert_list: Array, material: int = 1) -> int:
 	})
 	for vert_id in vert_list:
 		verticies[vert_id]["polygons"].append(ret_value)
-	if material < 1 or material > 2:
-		print("Unknown material: " + str(material))
 	return ret_value
 
 

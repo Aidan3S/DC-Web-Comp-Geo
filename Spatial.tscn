@@ -22,3 +22,7 @@ shadow_enabled = true
 
 [node name="VictoryRock" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 8.97766, 4.82977, 8.78209 )
+
+[connection signal="view_changed" from="FreeCamera" to="VictoryRock" method="_on_FreeCamera_view_changed"]
+[connection signal="chunk_update" from="MeshInstance" to="VictoryRock" method="_on_MeshInstance_chunk_update"]
+[connection signal="win" from="VictoryRock" to="FreeCamera" method="_on_VictoryRock_win"]

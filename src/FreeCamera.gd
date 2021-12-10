@@ -9,6 +9,7 @@ const BASE_SPEED = 3
 const SLOW_SPEED = 1
 const FAST_SPEED = 10
 
+signal view_changed(draw_mode)
 
 var last_mouse_pos = Vector2()
 var speed = BASE_SPEED
@@ -56,20 +57,28 @@ func _input(event):
 		var camera_rot = camera_rotator.rotation_degrees
 		camera_rot.x = clamp(camera_rot.x, -90, 90)
 		camera_rotator.rotation_degrees = camera_rot
-		
-	if event is InputEventMouseButton:
-		if event.pressed:
-			last_mouse_pos = get_viewport().get_mouse_position()
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-			get_viewport().warp_mouse(last_mouse_pos)
 	
-	if event.is_action_pressed("break"):
+	elif event.is_action_pressed("break"):
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		var collider = ray_cast.get_collider()
+		if collider != null and collider.get_parent() != null:
+			collider.get_parent().break_block(ray_cast.get_collision_point())
+			
+	elif event.is_action_pressed("place"):
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		var collider = ray_cast.get_collider()
 		if collider != null:
-			collider.get_parent().break_block(ray_cast.get_collision_point())
+			collider.get_parent().place_block(ray_cast.get_collision_point())
+			
+	elif event.is_action_pressed("ui_cancel"):
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-	if event is InputEventKey and Input.is_key_pressed(KEY_P):
+	elif event is InputEventKey and Input.is_key_pressed(KEY_P):
 		var vp = get_viewport()
 		vp.debug_draw = (vp.debug_draw + 1 ) % 4
+		emit_signal("view_changed", vp.debug_draw)
+
+
+func _on_VictoryRock_win():
+	$Objective/VBoxContainer/MarginContainer2/Label.text = """You won!
+	Thanks for playing my demo!"""
