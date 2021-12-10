@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://src/FreeCamera.gd" type="Script" id=1]
 [ext_resource path="res://assets/crosshair007.png" type="Texture" id=2]
@@ -6,6 +6,21 @@
 
 [sub_resource type="SphereShape" id=1]
 radius = 0.2
+
+[sub_resource type="SpatialMaterial" id=2]
+albedo_color = Color( 0.980392, 1, 0, 1 )
+emission_enabled = true
+emission = Color( 0.980392, 1, 0, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+
+[sub_resource type="SphereMesh" id=3]
+material = SubResource( 2 )
+radius = 0.1
+height = 0.1
+radial_segments = 5
+rings = 2
 
 [node name="FreeCamera" type="KinematicBody"]
 script = ExtResource( 1 )
@@ -65,7 +80,7 @@ __meta__ = {
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Controls"]
 margin_right = 233.0
-margin_bottom = 199.0
+margin_bottom = 216.0
 
 [node name="MarginContainer" type="MarginContainer" parent="Controls/VBoxContainer"]
 margin_right = 233.0
@@ -84,7 +99,7 @@ text = "Controls:"
 [node name="MarginContainer2" type="MarginContainer" parent="Controls/VBoxContainer"]
 margin_top = 34.0
 margin_right = 233.0
-margin_bottom = 199.0
+margin_bottom = 216.0
 custom_constants/margin_right = 16
 custom_constants/margin_top = 16
 custom_constants/margin_left = 16
@@ -94,7 +109,7 @@ custom_constants/margin_bottom = 16
 margin_left = 16.0
 margin_top = 16.0
 margin_right = 217.0
-margin_bottom = 149.0
+margin_bottom = 166.0
 text = "WASD: Move
 Q/E: move down/up
 Mouse: Look
@@ -102,7 +117,8 @@ Esc: Release Mouse
 Left Mouse: Break (Sphere)
 Right Mouse: Place (Sphere)
 Shift+Right Mouse: Place (Cube)
-P: Toggle View Mode"
+P: Toggle View Mode
+F: Show Hint Particles"
 
 [node name="Objective" type="PanelContainer" parent="."]
 anchor_left = 1.0
@@ -148,3 +164,13 @@ margin_right = 253.0
 margin_bottom = 47.0
 text = "Dig into the cube and find the golden
 victory rock."
+
+[node name="Particles" type="CPUParticles" parent="."]
+emitting = false
+lifetime = 2.0
+local_coords = false
+mesh = SubResource( 3 )
+direction = Vector3( 0, 0, -1 )
+spread = 0.0
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 0.5
