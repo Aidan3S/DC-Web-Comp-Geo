@@ -35,16 +35,6 @@ _global_script_classes=[ {
 "path": "res://src/World/Modal/HomoLeafNode.gd"
 }, {
 "base": "Reference",
-"class": "LinAlg",
-"language": "GDScript",
-"path": "res://ext/LinAlg.gd"
-}, {
-"base": "Reference",
-"class": "Matrix",
-"language": "GDScript",
-"path": "res://src/World/Modal/Matrix.gd"
-}, {
-"base": "Reference",
 "class": "MeshTool",
 "language": "GDScript",
 "path": "res://src/World/MeshTool.gd"
@@ -80,8 +70,6 @@ _global_script_class_icons={
 "CubeGenerator": "",
 "HeteroLeafNode": "",
 "HomoLeafNode": "",
-"LinAlg": "",
-"Matrix": "",
 "MeshTool": "",
 "Octree": "",
 "OctreeNode": "",
