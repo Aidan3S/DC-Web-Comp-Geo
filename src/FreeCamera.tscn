@@ -1,9 +1,26 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://src/FreeCamera.gd" type="Script" id=1]
+[ext_resource path="res://assets/crosshair007.png" type="Texture" id=2]
+[ext_resource path="res://src/InfoBG.tres" type="StyleBox" id=3]
 
 [sub_resource type="SphereShape" id=1]
 radius = 0.2
+
+[sub_resource type="SpatialMaterial" id=2]
+albedo_color = Color( 0.980392, 1, 0, 1 )
+emission_enabled = true
+emission = Color( 0.980392, 1, 0, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+
+[sub_resource type="SphereMesh" id=3]
+material = SubResource( 2 )
+radius = 0.1
+height = 0.1
+radial_segments = 5
+rings = 2
 
 [node name="FreeCamera" type="KinematicBody"]
 script = ExtResource( 1 )
@@ -27,10 +44,133 @@ spot_angle = 27.5638
 
 [node name="RayCast" type="RayCast" parent="CameraRotator/Camera"]
 enabled = true
-cast_to = Vector3( 0, 0, -3 )
+cast_to = Vector3( 0, 0, -5 )
+
+[node name="TextureRect" type="TextureRect" parent="CameraRotator/Camera"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -72.0
+margin_top = -70.0
+margin_right = 72.0
+margin_bottom = 74.0
+rect_scale = Vector2( 0.2, 0.2 )
+rect_pivot_offset = Vector2( 72, 72 )
+size_flags_horizontal = 0
+size_flags_vertical = 0
+texture = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="OmniLight" type="OmniLight" parent="CameraRotator"]
 visible = false
 light_energy = 0.23
 omni_range = 3.0
 omni_attenuation = 3.86374
+
+[node name="Controls" type="PanelContainer" parent="."]
+margin_right = 233.0
+margin_bottom = 182.0
+custom_styles/panel = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Controls"]
+margin_right = 233.0
+margin_bottom = 216.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Controls/VBoxContainer"]
+margin_right = 233.0
+margin_bottom = 30.0
+custom_constants/margin_right = 16
+custom_constants/margin_top = 16
+custom_constants/margin_left = 16
+
+[node name="Label" type="Label" parent="Controls/VBoxContainer/MarginContainer"]
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 217.0
+margin_bottom = 30.0
+text = "Controls:"
+
+[node name="MarginContainer2" type="MarginContainer" parent="Controls/VBoxContainer"]
+margin_top = 34.0
+margin_right = 233.0
+margin_bottom = 216.0
+custom_constants/margin_right = 16
+custom_constants/margin_top = 16
+custom_constants/margin_left = 16
+custom_constants/margin_bottom = 16
+
+[node name="Label" type="Label" parent="Controls/VBoxContainer/MarginContainer2"]
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 217.0
+margin_bottom = 166.0
+text = "WASD: Move
+Q/E: move down/up
+Mouse: Look
+Esc: Release Mouse
+Left Mouse: Break (Sphere)
+Right Mouse: Place (Sphere)
+Shift+Right Mouse: Place (Cube)
+P: Toggle View Mode
+F: Show Hint Particles"
+
+[node name="Objective" type="PanelContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -269.0
+margin_bottom = 97.0
+custom_styles/panel = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Objective"]
+margin_right = 269.0
+margin_bottom = 97.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Objective/VBoxContainer"]
+margin_right = 269.0
+margin_bottom = 30.0
+custom_constants/margin_right = 16
+custom_constants/margin_top = 16
+custom_constants/margin_left = 16
+
+[node name="Label" type="Label" parent="Objective/VBoxContainer/MarginContainer"]
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 253.0
+margin_bottom = 30.0
+text = "Objective:"
+
+[node name="MarginContainer2" type="MarginContainer" parent="Objective/VBoxContainer"]
+margin_top = 34.0
+margin_right = 269.0
+margin_bottom = 97.0
+custom_constants/margin_right = 16
+custom_constants/margin_top = 16
+custom_constants/margin_left = 16
+custom_constants/margin_bottom = 16
+
+[node name="Label" type="Label" parent="Objective/VBoxContainer/MarginContainer2"]
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 253.0
+margin_bottom = 47.0
+text = "Dig into the cube and find the golden
+victory rock."
+
+[node name="Particles" type="CPUParticles" parent="."]
+emitting = false
+lifetime = 2.0
+local_coords = false
+mesh = SubResource( 3 )
+direction = Vector3( 0, 0, -1 )
+spread = 0.0
+gravity = Vector3( 0, 0, 0 )
+initial_velocity = 0.5

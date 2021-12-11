@@ -381,14 +381,14 @@ func _process_edge(nodes: Array, direction: int, mesh_tool: MeshTool):
 	mesh_tool.add_quad(verticies, material)
 
 
-func apply_func(generator: WorldGenerator, subtract: bool, meshTool: MeshTool):
-	var new_root =_apply_func(root, generator, subtract, Vector3.ZERO, chunk_size, meshTool)
+func apply_func(generator: WorldGenerator, subtract: bool, meshTool: MeshTool, brush_min_pos: Vector3, brush_size: int):
+	var new_root =_apply_func(root, generator, subtract, Vector3.ZERO, chunk_size, meshTool, brush_min_pos, brush_size)
 	if new_root != null:
 		root = new_root
 	build_mesh(meshTool)
 
 
-func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_pos: Vector3, size: int, meshTool: MeshTool):
+func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_pos: Vector3, size: int, meshTool: MeshTool, brush_min_pos: Vector3, brush_size: int):
 	var child_size = size / 2
 	# Due to silly restrictions in gdscript, we have to handle this in octree,
 	# not in the nodes themselves. BranchNodes can't instatiate more branches.
@@ -400,7 +400,7 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 				VERTEX_MAP[i][1] * child_size + min_pos.y,
 				VERTEX_MAP[i][2] * child_size + min_pos.z
 			)
-			var replacement = _apply_func(n.children[i], generator, subtract, child_pos, child_size, meshTool)
+			var replacement = _apply_func(n.children[i], generator, subtract, child_pos, child_size, meshTool, brush_min_pos, brush_size)
 			if replacement != null:
 				n.children[i] = replacement
 		# Check for collapse
@@ -427,7 +427,7 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 				# Check if sign changed
 				if had_mass != (n.points[i] <= 0):
 					# Replace material
-					n.point_materials[i] = 0 if n.points[i] <= 0 else 1
+					n.point_materials[i] = 3 if n.points[i] <= 0 else 0
 					# Adjust corner bits
 					if n.points[i] <= 0:
 						n.corners &= ~(1 << i)
@@ -454,9 +454,9 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 	
 	elif n is HomoLeafNode:
 		# Check area for changed signs
-		for x in range(min_pos.x, min_pos.x + size + 1):
-			for y in range(min_pos.y, min_pos.y + size + 1):
-				for z in range(min_pos.z, min_pos.z + size + 1):
+		for x in range(max(min_pos.x, brush_min_pos.x), min(min_pos.x + size, brush_min_pos.x + brush_size) + 1):
+			for y in range(max(min_pos.y, brush_min_pos.y), min(min_pos.y + size, brush_min_pos.y + brush_size) + 1):
+				for z in range(max(min_pos.z, brush_min_pos.z), min(min_pos.z + size, brush_min_pos.z + brush_size) + 1):
 					# Check if different sign
 					var sample = generator.sample(x, y, z)
 					if (subtract and (sample > 0) and n.has_mass) or (!subtract and (sample <= 0) and !n.has_mass):
@@ -470,7 +470,7 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 							for i in range(len(new_node.points)):
 								new_node.points[i] = val
 								new_node.point_materials[i] = n.material
-							_apply_func(new_node, generator, subtract, min_pos, size, meshTool)
+							_apply_func(new_node, generator, subtract, min_pos, size, meshTool, brush_min_pos, brush_size)
 							return new_node
 						else:
 							# Break into branch
@@ -482,9 +482,39 @@ func _apply_func(n: OctreeNode, generator: WorldGenerator, subtract: bool, min_p
 								new_child.has_mass = n.has_mass
 								new_child.material = n.material
 								new_node.children[i] = new_child
-							_apply_func(new_node, generator, subtract, min_pos, size, meshTool)
+							_apply_func(new_node, generator, subtract, min_pos, size, meshTool, brush_min_pos, brush_size)
 							return new_node
 	return null
+
+
+func get_weight_at(search_pos: Vector3):
+	return _get_weight_at(search_pos, Vector3.ZERO, 32, root)
+
+
+func _get_weight_at(search_pos: Vector3, min_pos: Vector3, size: int, node: OctreeNode):
+	# Base case: every child is the same weight
+	if node is HomoLeafNode:
+		return -1 if node.has_mass else 1
+		
+	var child_size = size / 2
+	var local_pos = search_pos - min_pos
+	
+	# Get corner index
+	var corner_index = 4 if local_pos.x > child_size else 0
+	corner_index |= 2 if local_pos.y > child_size else 0
+	corner_index |= 1 if local_pos.z > child_size else 0
+	
+	# Return appropriate corner weight if a hetero node
+	if node is HeteroLeafNode:
+		return node.points[corner_index]
+		
+	# Continue down path if branch node
+	var child_pos = Vector3(
+		VERTEX_MAP[corner_index][0] * child_size + min_pos.x,
+		VERTEX_MAP[corner_index][1] * child_size + min_pos.y,
+		VERTEX_MAP[corner_index][2] * child_size + min_pos.z
+	)
+	return _get_weight_at(search_pos, child_pos, child_size, node.children[corner_index])
 
 func _count_verts(node: OctreeNode):
 	if node is HeteroLeafNode:

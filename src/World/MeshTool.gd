@@ -7,6 +7,7 @@ var materials = {
 	"0": preload("res://src/Materials/M_Test.tres"),
 	"1": preload("res://src/Materials/M_Grass.tres"),
 	"2": preload("res://src/Materials/M_Dirt.tres"),
+	"3": preload("res://src/Materials/M_Brick.tres"),
 }
 
 
